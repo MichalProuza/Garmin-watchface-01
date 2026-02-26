@@ -1,4 +1,5 @@
 import Toybox.Application;
+import Toybox.Lang;
 import Toybox.WatchUi;
 
 //! Hlavní třída aplikace ciferníku Home Dashboard.
