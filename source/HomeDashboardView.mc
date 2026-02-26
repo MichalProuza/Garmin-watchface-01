@@ -9,6 +9,7 @@ import Toybox.Activity;
 
 //! Hlavní view ciferníku Home Dashboard.
 //! Zobrazuje čas, datum, den v týdnu, baterii, kroky, tep a stav Bluetooth.
+//! Optimalizováno pro Garmin fēnix 8 (51 mm, AMOLED 454×454).
 class HomeDashboardView extends WatchUi.WatchFace {
 
     // České názvy dnů v týdnu (1=neděle, 2=pondělí, ..., 7=sobota)
@@ -33,11 +34,14 @@ class HomeDashboardView extends WatchUi.WatchFace {
     }
 
     //! Hlavní vykreslovací metoda — volá se každou minutu (nebo sekundu v aktivním režimu).
+    //! Všechny pozice jsou proporcionální k rozlišení displeje, takže ciferník
+    //! vypadá správně na Fenix 8 51 mm (454×454) i na menších zařízeních.
     function onUpdate(dc as Dc) as Void {
         var width = dc.getWidth();
         var height = dc.getHeight();
+        var centerX = width / 2;
 
-        // Pozadí
+        // Pozadí — čistě černé (ideální pro AMOLED, šetří baterii)
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
 
@@ -63,15 +67,14 @@ class HomeDashboardView extends WatchUi.WatchFace {
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            width / 2,
-            height / 2 - 40,
+            centerX,
+            height * 35 / 100,
             Graphics.FONT_NUMBER_HOT,
             timeStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
         // --- DATUM ---
-        // info.day_of_week: 1=Ne, 2=Po, 3=Út, 4=St, 5=Čt, 6=Pá, 7=So
         var dayIdx = info.day_of_week as Number;
         var monthIdx = info.month as Number;
 
@@ -93,8 +96,8 @@ class HomeDashboardView extends WatchUi.WatchFace {
 
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            width / 2,
-            height / 2 + 20,
+            centerX,
+            height * 55 / 100,
             Graphics.FONT_SMALL,
             dateStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
@@ -104,17 +107,25 @@ class HomeDashboardView extends WatchUi.WatchFace {
         var battery = System.getSystemStats().battery;
         var battStr = Lang.format("$1$%", [battery.format("%d")]);
 
+        var infoRowY = height * 68 / 100;
+        var battTextX = centerX - width / 5;
+
         dc.setColor(getBatteryColor(battery), Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            width / 2 - 50,
-            height / 2 + 55,
+            battTextX,
+            infoRowY,
             Graphics.FONT_TINY,
             battStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
-        // Ikona baterie (jednoduchý obdélník)
-        drawBatteryIcon(dc, width / 2 - 75, height / 2 + 48, battery);
+        // Ikona baterie (škálovaná podle rozlišení displeje)
+        var iconW = width / 16;
+        var iconH = iconW * 5 / 8;
+        if (iconH < 6) {
+            iconH = 6;
+        }
+        drawBatteryIcon(dc, battTextX - iconW - width / 30, infoRowY - iconH / 2, battery, iconW, iconH);
 
         // --- KROKY ---
         var actInfo = ActivityMonitor.getInfo();
@@ -123,8 +134,8 @@ class HomeDashboardView extends WatchUi.WatchFace {
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            width / 2 + 50,
-            height / 2 + 55,
+            centerX + width / 5,
+            infoRowY,
             Graphics.FONT_TINY,
             stepsStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
@@ -136,8 +147,8 @@ class HomeDashboardView extends WatchUi.WatchFace {
             var hrStr = Lang.format("$1$ bpm", [hr.format("%d")]);
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(
-                width / 2,
-                height / 2 + 80,
+                centerX,
+                height * 78 / 100,
                 Graphics.FONT_TINY,
                 hrStr,
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
@@ -151,7 +162,11 @@ class HomeDashboardView extends WatchUi.WatchFace {
         } else {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         }
-        dc.fillCircle(width / 2, height - 25, 4);
+        var btRadius = width / 64;
+        if (btRadius < 4) {
+            btRadius = 4;
+        }
+        dc.fillCircle(centerX, height * 88 / 100, btRadius);
     }
 
     //! Vrací barvu podle úrovně baterie.
@@ -165,19 +180,24 @@ class HomeDashboardView extends WatchUi.WatchFace {
         }
     }
 
-    //! Nakreslí jednoduchou ikonu baterie.
-    private function drawBatteryIcon(dc as Dc, x as Number, y as Number, battery as Float) as Void {
+    //! Nakreslí škálovanou ikonu baterie.
+    private function drawBatteryIcon(dc as Dc, x as Number, y as Number, battery as Float, iconW as Number, iconH as Number) as Void {
         dc.setColor(getBatteryColor(battery), Graphics.COLOR_TRANSPARENT);
         // Obrys baterie
-        dc.drawRectangle(x, y, 16, 10);
+        dc.drawRectangle(x, y, iconW, iconH);
         // Pól baterie
-        dc.fillRectangle(x + 16, y + 3, 2, 4);
+        var poleW = iconW / 8;
+        if (poleW < 2) {
+            poleW = 2;
+        }
+        var poleH = iconH * 2 / 5;
+        dc.fillRectangle(x + iconW, y + (iconH - poleH) / 2, poleW, poleH);
         // Výplň podle úrovně
-        var fillWidth = ((battery / 100.0) * 14).toNumber();
+        var fillWidth = ((battery / 100.0) * (iconW - 2)).toNumber();
         if (fillWidth < 1) {
             fillWidth = 1;
         }
-        dc.fillRectangle(x + 1, y + 1, fillWidth, 8);
+        dc.fillRectangle(x + 1, y + 1, fillWidth, iconH - 2);
     }
 
     //! Získá aktuální tepovou frekvenci z Activity nebo ActivityMonitor.
