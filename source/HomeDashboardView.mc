@@ -68,7 +68,7 @@ class HomeDashboardView extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
             centerX,
-            height * 35 / 100,
+            height * 30 / 100,
             Graphics.FONT_NUMBER_HOT,
             timeStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
@@ -97,35 +97,35 @@ class HomeDashboardView extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
             centerX,
-            height * 55 / 100,
+            height * 50 / 100,
             Graphics.FONT_SMALL,
             dateStr,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
-        // --- BATERIE ---
+        // --- BATERIE (ikona + text, bez překryvu) ---
         var battery = System.getSystemStats().battery;
         var battStr = Lang.format("$1$%", [battery.format("%d")]);
 
-        var infoRowY = height * 68 / 100;
-        var battTextX = centerX - width / 5;
-
-        dc.setColor(getBatteryColor(battery), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(
-            battTextX,
-            infoRowY,
-            Graphics.FONT_TINY,
-            battStr,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
-        );
-
-        // Ikona baterie (škálovaná podle rozlišení displeje)
-        var iconW = width / 16;
+        var infoRowY = height * 63 / 100;
+        var iconW = width / 18;
         var iconH = iconW * 5 / 8;
         if (iconH < 6) {
             iconH = 6;
         }
-        drawBatteryIcon(dc, battTextX - iconW - width / 30, infoRowY - iconH / 2, battery, iconW, iconH);
+
+        // Ikona vlevo, text vpravo od ikony
+        var iconX = centerX - width * 24 / 100;
+        drawBatteryIcon(dc, iconX, infoRowY - iconH / 2, battery, iconW, iconH);
+
+        dc.setColor(getBatteryColor(battery), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(
+            iconX + iconW + iconW / 2 + 4,
+            infoRowY,
+            Graphics.FONT_TINY,
+            battStr,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        );
 
         // --- KROKY ---
         var actInfo = ActivityMonitor.getInfo();
@@ -134,11 +134,11 @@ class HomeDashboardView extends WatchUi.WatchFace {
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(
-            centerX + width / 5,
+            centerX + width * 10 / 100,
             infoRowY,
             Graphics.FONT_TINY,
             stepsStr,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
         // --- TEP ---
@@ -148,7 +148,7 @@ class HomeDashboardView extends WatchUi.WatchFace {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             dc.drawText(
                 centerX,
-                height * 78 / 100,
+                height * 75 / 100,
                 Graphics.FONT_TINY,
                 hrStr,
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
@@ -162,11 +162,11 @@ class HomeDashboardView extends WatchUi.WatchFace {
         } else {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         }
-        var btRadius = width / 64;
+        var btRadius = width / 60;
         if (btRadius < 4) {
             btRadius = 4;
         }
-        dc.fillCircle(centerX, height * 88 / 100, btRadius);
+        dc.fillCircle(centerX, height * 86 / 100, btRadius);
     }
 
     //! Vrací barvu podle úrovně baterie.
