@@ -9,10 +9,10 @@ class HomeDashboardApp extends Application.AppBase {
         AppBase.initialize();
     }
 
-    function onStart(state as Dictionary?) as Void {
+    function onStart(state as Lang.Dictionary?) as Void {
     }
 
-    function onStop(state as Dictionary?) as Void {
+    function onStop(state as Lang.Dictionary?) as Void {
     }
 
     //! Vrací počáteční view ciferníku.
